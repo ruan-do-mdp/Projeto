@@ -56,8 +56,8 @@ app.get('/api/pessoas/:id', requireAuth, requirePerm('ver_fichas'), async (req, 
   res.json({ pessoa: rows[0] });
 });
 
-// criação de um novo registro — exclusiva do nível dev
-app.post('/api/pessoas', requireAuth, requireDev, async (req, res) => {
+// criação de um novo registro — requer permissão de edição de fichas
+app.post('/api/pessoas', requireAuth, requirePerm('editar_fichas'), async (req, res) => {
   const { nome, cpf, nasc, mae, pai, cidade, altura, civil, foto, foto_passaporte } = req.body || {};
   if (!nome || !nome.trim()) {
     return res.status(400).json({ erro: 'Informe ao menos o nome.' });
@@ -70,8 +70,8 @@ app.post('/api/pessoas', requireAuth, requireDev, async (req, res) => {
   res.status(201).json({ pessoa: rows[0] });
 });
 
-// edição de ficha (dados + fotos) — exclusiva do nível dev
-app.put('/api/pessoas/:id', requireAuth, requireDev, async (req, res) => {
+// edição de ficha (dados + fotos) — requer permissão de edição de fichas
+app.put('/api/pessoas/:id', requireAuth, requirePerm('editar_fichas'), async (req, res) => {
   const { nome, cpf, nasc, mae, pai, cidade, altura, civil, foto, foto_passaporte } = req.body || {};
   const { rows } = await pool.query(
     `UPDATE pessoas SET nome=$1, cpf=$2, nasc=$3, mae=$4, pai=$5, cidade=$6, altura=$7, civil=$8, foto=$9, foto_passaporte=$10
@@ -82,8 +82,8 @@ app.put('/api/pessoas/:id', requireAuth, requireDev, async (req, res) => {
   res.json({ pessoa: rows[0] });
 });
 
-// remoção de um registro — exclusiva do nível dev
-app.delete('/api/pessoas/:id', requireAuth, requireDev, async (req, res) => {
+// remoção de um registro — requer permissão de edição de fichas
+app.delete('/api/pessoas/:id', requireAuth, requirePerm('editar_fichas'), async (req, res) => {
   const { rows } = await pool.query('DELETE FROM pessoas WHERE id = $1 RETURNING id', [req.params.id]);
   if (!rows.length) return res.status(404).json({ erro: 'Registro não encontrado.' });
   res.json({ ok: true });
@@ -146,9 +146,6 @@ app.put('/api/usuarios/:id/permissoes', requireAuth, requireDev, async (req, res
   if (!Array.isArray(permissoes)) return res.status(400).json({ erro: 'Lista de permissões inválida.' });
   const alvo = await pool.query('SELECT login FROM usuarios WHERE id = $1', [req.params.id]);
   if (!alvo.rows.length) return res.status(404).json({ erro: 'Usuário não encontrado.' });
-  if (alvo.rows[0].login === 'dev') {
-    return res.status(403).json({ erro: 'A conta dev já possui todas as permissões.' });
-  }
   const { rows } = await pool.query(
     `UPDATE usuarios SET permissoes=$1 WHERE id=$2 RETURNING id, login, nome, cargo, nivel, permissoes`,
     [permissoes, req.params.id]
