@@ -1,5 +1,6 @@
 require('dotenv').config();
 // server.js — ponto de entrada do backend (Express)
+const cors = require('cors');
 const express = require('express');
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -8,8 +9,9 @@ const { gerarToken, publicUser, requireAuth, requirePerm, requireDev } = require
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// payload maior que o padrão por causa das fotos em base64
+app.use(cors({
+    origin: 'https://containedor.netlify.app'
+}));
 app.use(express.json({ limit: '8mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
